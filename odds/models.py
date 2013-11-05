@@ -21,8 +21,8 @@ class Machine(models.Model):
     @property
     def current_reverse_odds(self):
         sample = self.oddssample_set.filter(at_time=SampleSet.latest())
-        odds = sample[0].value
-        return round(float(odds)/float(odds-1),2)
+        odds = sample[0].reverse_value
+        return round(odds,2)
     @property
     def odds_against(self):
         for_val = 0.0
@@ -59,6 +59,12 @@ class OddsSample(models.Model):
     at_time = models.ForeignKey('SampleSet')
     machine = models.ForeignKey('Machine')
     value = models.DecimalField(max_digits=8,decimal_places=2)
+
+    @property
+    def reverse_value(self):
+        odds = self.value
+        return float(odds)/float(odds-1)
+
     def __unicode__(self):
         return self.machine.name + " at %d" % self.value + ":1 at " + self.at_time.at_time.strftime("%b %d %H:%M")
 
@@ -66,6 +72,15 @@ class PinUser(models.Model):
     account = models.OneToOneField(User)
     wppr = models.IntegerField()
     email = models.CharField(max_length=140)
+    @property
+    def total_bets(self):
+        return self.bet_set.count()
+    @property
+    def bet_count(self):
+        return self.bet_set.filter(position=True).count()
+    @property
+    def reverse_bet_count(self):
+        return self.bet_set.filter(position=False).count()
     def __unicode__(self):
         return self.account.username 
 

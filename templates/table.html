@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 {% load staticfiles %}
+{% load humanize %}
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link href="{% static "bootstrap/css/bootstrap.min.css" %}" rel="stylesheet">
 <script src="{% static "bootstrap/js/bootstrap.min.js" %}"></script>
@@ -9,7 +10,34 @@
 </head>
 <body>
     <div class="row">
+        <div class="span8 offset1"><h3>Last 5 bets</h3></div>
     </div>
+    <div class="row">
+        <div class="span1"><h5>User</h5></div>
+        <div class="span5"><h5>Bet</h5></div>
+        <div class="span3"><h5>Time</h5></div>
+        <div class="span6"><h5>Comment</h5></div>
+    </div>
+    {% for bet in last5bets %}
+    <div class="row">
+        <div class="span1">{{ bet.user }}</div>
+        {% include "bet.html" %}
+    </div>
+    {% endfor %}
+    {% for user in users %}
+    <div class="row">
+        <div class="span1">{{ user }}</div>
+        <div class="span1">{{ user.total_bets }}</div>
+        <div class="span1">{{ user.bet_count }}</div>
+        <div class="span1">{{ user.reverse_bet_count }}</div>
+    </div>
+    {% for bet in user.bet_set.all %}
+    <div class="row">
+        <div class="span1"></div>
+        {% include "bet.html" %}
+    </div>
+    {% endfor %}
+    {% endfor %}
     <div class="row">
         <div class="span4 header">Machine</div>
         <div class="span2">Odds in tourney</div>
@@ -25,6 +53,7 @@
         <div class="span2">{{ machine.current_reverse_odds }}:1</div>
         <div class="span2">{{ machine.reverse_bet_count}}</div>
         <div class="span2">{{ machine.odds_against}}:1</div>
+        <!-- add pending -->
     </div>
 {% endfor %}
 </body>
