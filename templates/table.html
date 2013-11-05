@@ -8,13 +8,23 @@
 
 </head>
 <body>
+    <div class="row">
+    </div>
+    <div class="row">
+        <div class="span4 header">Machine</div>
+        <div class="span2">Odds in tourney</div>
+        <div class="span2">Bets for</div>
+        <div class="span2">Odds not in tourney</div>
+        <div class="span2">Bets against</div>
+    </div>
 {% for machine in machines %}
     <div class="row">
         <div class="span4">{{ machine.name }}</div>
         <div class="span2">{{ machine.current_odds }}:1</div>
-        <div class="span2">{{ machine.current_reverse_odds }}:1</div>
         <div class="span2">{{ machine.bet_count}}</div>
-
+        <div class="span2">{{ machine.current_reverse_odds }}:1</div>
+        <div class="span2">{{ machine.reverse_bet_count}}</div>
+        <div class="span2">{{ machine.odds_against}}:1</div>
     </div>
 {% endfor %}
 </body>

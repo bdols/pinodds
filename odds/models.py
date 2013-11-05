@@ -10,28 +10,37 @@ class Machine(models.Model):
     init_odds = models.IntegerField()
     @property
     def bet_count(self):
-        return self.bet_set.count()
+        return self.bet_set.filter(position=True).count()
+    @property
+    def reverse_bet_count(self):
+        return self.bet_set.filter(position=False).count()
     @property
     def current_odds(self):
         sample = self.oddssample_set.filter(at_time=SampleSet.latest())
-        return sample[0].value
+        return round(sample[0].value,2)
     @property
     def current_reverse_odds(self):
         sample = self.oddssample_set.filter(at_time=SampleSet.latest())
         odds = sample[0].value
-        return round(float(odds)/(odds-1),2)
+        return round(float(odds)/float(odds-1),2)
     @property
     def odds_against(self):
-        for_val=0
+        for_val = 0.0
         for b in self.bet_set.filter(position=True):
             for_val += b.value
-        all_bets=0
-        for c in Bet.objects.all():
-            all_bets+=c.value
-        #if all_val==0:
-            #return self.init_odds
-        #print all_bets,for_val,self.init_odds
-        return round((5000+all_bets)/(for_val+int(5000/self.init_odds)),2)
+        against_val = 0
+        for b in self.bet_set.filter(position=False):
+            against_val += b.value
+        for b in Bet.objects.filter(position=False).exclude(machine=self):
+            for_val += b.value/(9*float(Machine.objects.count()))
+        all_bets = 0
+        for c in Bet.objects.filter(position=True):
+            all_bets += c.value
+        for c in Bet.objects.filter(position=False):
+            all_bets += c.value/float(Machine.objects.count())
+        print all_bets,for_val,self.init_odds
+        pool=5000.0
+        return round((pool+against_val+all_bets)/(for_val+pool/self.init_odds),2)
     def probability(self):
         return 1/(self.odds_against()+1)
     def __unicode__(self):
@@ -49,7 +58,7 @@ class SampleSet(models.Model):
 class OddsSample(models.Model):
     at_time = models.ForeignKey('SampleSet')
     machine = models.ForeignKey('Machine')
-    value = models.IntegerField()
+    value = models.DecimalField(max_digits=8,decimal_places=2)
     def __unicode__(self):
         return self.machine.name + " at %d" % self.value + ":1 at " + self.at_time.at_time.strftime("%b %d %H:%M")
 
