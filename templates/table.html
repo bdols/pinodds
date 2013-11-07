@@ -6,9 +6,51 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link href="{% static "bootstrap/css/bootstrap.min.css" %}" rel="stylesheet">
 <script src="{% static "bootstrap/js/bootstrap.min.js" %}"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script>
+function processBet(data,i){
+    var idx=i+1;
+    $("#"+idx+"time").text(data.at_time);
+    $("#"+idx+"comment").text(data.comment);
+    if (data.position) {
+        $("#"+idx+"machine").text(data.machine + " at " + data.at_odds + ":1");
+    } else {
+        $("#"+idx+"machine").text("Against " + data.machine + " at " + data.at_odds + ":1");
+    }
+    $("#"+idx+"user").text(data.user);
+}
 
+function process(data) {
+    for (var idx=0; idx<data.bets.length; ++idx) {
+        processBet(data.bets[idx],idx);
+    }
+}
+function refreshbets() {
+    $.getJSON("/last5/",function (data) { 
+        process(data);
+    }); 
+}
+window.setInterval(refreshbets,10000);
+$(document).ready(refreshbets);
+</script>
 </head>
 <body>
+    <div class="row">
+        <div class="span1 offset2">
+        {% if user.is_authenticated %}
+            <a href={% url 'django.contrib.auth.views.logout_then_login' %}>Log out</a>
+        {% else %}
+            <a href={% url 'django.contrib.auth.views.login' %}>Log in</a>
+        {% endif %}
+        </div>
+        <div id="status" class="span-3">
+        {% if user.is_authenticated %}
+        Logged in as {{ user.username }}
+        {% else %}
+        <B>Not logged in</B>
+        {% endif %}
+         </div>
+    </div>
     <div class="row">
         <div class="span8 offset1"><h3>Last 5 bets</h3></div>
     </div>
@@ -18,12 +60,14 @@
         <div class="span3"><h5>Time</h5></div>
         <div class="span6"><h5>Comment</h5></div>
     </div>
+    <div id="last5">
     {% for bet in last5bets %}
     <div class="row">
-        <div class="span1">{{ bet.user }}</div>
+        <div id={{forloop.counter}}user class="span1">{{ bet.user }}</div>
         {% include "bet.html" %}
     </div>
     {% endfor %}
+    </div>
     {% for user in users %}
     <div class="row">
         <div class="span1">{{ user }}</div>

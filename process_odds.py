@@ -5,7 +5,7 @@ import pytz
 if __name__ != '__main__':
     sys.exit(1)
 
-os.environ['TZ'] = 'US/Eastern'
+os.environ['TZ'] = 'US/Central'
 eastern=pytz.timezone(os.environ['TZ'])
 time.tzset()
 

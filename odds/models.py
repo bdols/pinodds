@@ -84,10 +84,15 @@ class PinUser(models.Model):
     def __unicode__(self):
         return self.account.username 
 
+class Ticket(models.Model):
+    user = models.ForeignKey("PinUser")
+    available_value = models.IntegerField()
+
 class Bet(models.Model):
     machine = models.ForeignKey('Machine')
-    value = models.IntegerField()
+    ticket = models.ForeignKey("Ticket")
     user = models.ForeignKey("PinUser")
+    value = models.IntegerField()
     position = models.BooleanField()
     comment = models.CharField(max_length=140,default="")
     at_time = models.DateTimeField(auto_now=True)
@@ -97,3 +102,4 @@ admin.site.register(Machine)
 admin.site.register(PinUser)
 admin.site.register(OddsSample)
 admin.site.register(Bet)
+admin.site.register(Ticket)
