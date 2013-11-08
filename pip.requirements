@@ -1,5 +1,7 @@
 Django==1.5.5
 argparse==1.2.1
 distribute==0.6.24
+django-registration==1.0
 pytz==2013.7
+simplejson==3.3.1
 wsgiref==0.1.2

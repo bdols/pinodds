@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib import admin
 from django.db.models import Max
+from django.db.models.signals import post_save
 
 # Create your models here.
 
@@ -70,8 +71,7 @@ class OddsSample(models.Model):
 
 class PinUser(models.Model):
     account = models.OneToOneField(User)
-    wppr = models.IntegerField()
-    email = models.CharField(max_length=140)
+    wppr = models.IntegerField(default=0)
     @property
     def total_bets(self):
         return self.bet_set.count()
@@ -82,7 +82,13 @@ class PinUser(models.Model):
     def reverse_bet_count(self):
         return self.bet_set.filter(position=False).count()
     def __unicode__(self):
-        return self.account.username 
+        return "%s's profiles" % self.account.username 
+
+def create_pinuser(sender, instance, created, **kwargs):
+    if created:
+        profile,created = PinUser.objects.get_or_create(account=instance)
+
+post_save.connect(create_pinuser, sender=User)
 
 class Ticket(models.Model):
     user = models.ForeignKey("PinUser")

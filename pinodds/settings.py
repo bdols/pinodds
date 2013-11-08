@@ -48,6 +48,11 @@ USE_L10N = True
 # If you set this to False, Django will not use timezone-aware datetimes.
 USE_TZ = True
 
+ACCOUNT_ACTIVATION_DAYS=2
+EMAIL_HOST='localhost'
+DEFAULT_FROM_EMAIL="webmaster@localhost"
+AUTH_PROFILE_MODULE='odds.PinUser'
+
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
 MEDIA_ROOT = ''
@@ -125,6 +130,7 @@ INSTALLED_APPS = (
     'django.contrib.humanize',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
+    'registration',
     'odds'
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
