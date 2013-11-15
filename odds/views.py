@@ -27,16 +27,27 @@ def bet(request):
         if not request.user.is_authenticated:
             raise Exception, "Unauthorized. Please login"
         ticket=Ticket.objects.get(id=int(request.POST['tickid']))
-        value=int(request.POST['value'])
-        if ticket.value<=value:
-            raise Exception, "Only %d left and you chose %d pinbucks" % (ticket.value, value)
+        try:
+            value=int(request.POST['value'])
+            if value<0:
+                raise Exception, "# of pinbucks must be a round number"
+        except:
+            raise Exception, "# of pinbucks must be a round number"
+        if ticket.value<value:
+            raise Exception, "Only %d left on this ticket and you chose %d pinbucks" % (ticket.value, value)
         b=Bet()
         b.machine=Machine.objects.get(id=request.POST['machid'])
         b.ticket=Ticket.objects.get(id=int(request.POST['tickid']))
         b.value=value
-        b.position=request.POST['position']
+        if request.POST['position']=="on":
+            b.position=True
+        else:
+            b.position=False
+        print b.position
         b.comment=request.POST['comment']
         b.at_odds=OddsSample.objects.get(at_time=SampleSet.latest(),machine=b.machine)
+        if b.position==False and b.at_odds.reverse_value * 100 > b.value:
+            raise Exception, "reverse picks needs to be larger than %d pinbucks" % (b.at_odds.reverse_value * 100)
         b.user=PinUser.objects.get(account=request.user)
         b.save()
         data['result']=True

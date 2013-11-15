@@ -31,26 +31,32 @@ function refreshbets() {
     }); 
 }
 {% if user.is_authenticated %}
+var in_tix_modal=false;
 function refreshtix() {
-    $.getJSON("/tickets/" + {{ user.id }}, function(data) {
-        $("select[name=tickid]").children().remove();
-        $.each(data, function (key, value) {
-            $("select[name=tickid]").append($("<option></option>").attr("value",value.tickid).text("Ticket " + value.tickid+ " with " + value.value + " pinbucks left"));
+    if (!in_tix_modal) {
+        $.getJSON("/tickets/" + {{ user.id }}, function(data) {
+            $("select[name=tickid]").children().remove();
+            $.each(data, function (key, value) {
+                $("select[name=tickid]").append($("<option></option>").attr("value",value.tickid).text("Ticket " + value.tickid+ " with " + value.value + " pinbucks left"));
+            });
         });
-    });
+    }
 }
 window.setInterval(refreshtix,10000);
 {% endif %}
 window.setInterval(refreshbets,10000);
 $(document).ready(function () {
-refreshbets();
-{% if user.is_authenticated %}
-refreshtix();
-{% endif %}
-$('#betmodal').on('hidden.bs.modal', function () {
-    var ff= $(this).attr("id");
-});
-
+    $("#error").hide();
+    refreshbets();
+    {% if user.is_authenticated %}
+        refreshtix();
+    {% endif %}
+    $('#betmodal').on('show', function () {
+        in_tix_modal=true;
+    });
+    $('#betmodal').on('hidden', function () {
+        in_tix_modal=false;
+    });
 });
 </script>
 </head>
@@ -77,13 +83,6 @@ $('#betmodal').on('hidden.bs.modal', function () {
             </div>
             {% endif %}
             <div id="tickets" class="span-2">
-            {% if user.is_authenticated %} Tickets<br>
-            {% for ticket in tickets %}
-                #{{ ticket.id }} with {{ ticket.value }} available<br>
-                {% include "ticket.html" %}
-                <hr>
-            {% endfor %}
-            {% endif %}
             </div>
 
 
@@ -94,7 +93,7 @@ $('#betmodal').on('hidden.bs.modal', function () {
             <div class="span8 offset1"><h3>Last 5 bets</h3></div>
         </div>
         <div class="row">
-            <div class="span1"><h5>User</h5></div>
+            <div class="span1"><h5>Login</h5></div>
             <div class="span3"><h5>Pick</h5></div>
             <div class="span2"><h5>Time</h5></div>
             <div class="span5"><h5>Comment</h5></div>
@@ -114,48 +113,44 @@ $('#betmodal').on('hidden.bs.modal', function () {
         $('#machname').text($('#'+counter+'mach').text());
         $('#odds').text($('#'+counter+'odds').text());
         $('#rodds').text($('#'+counter+'rodds').text());
+        $('#odds').show();
+        $('#rodds').hide();
+        $('#against').hide();
+    }
+    function calcpayout() {
+        if ($("#position").is(':checked')) {
+            $('#payoutval').text($('#odds').text() * $("#pinbucks").val());
+        } else {
+            $('#payoutval').text($('#rodds').text() * $("#pinbucks").val());
+        }
     }
 </script>
-    <div class="modal fade" id="betmodal" role="dialog" aria-labelledby="bet model label" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h4 class="modal-title" id="myModalLabel">What's your bet?</h4>
-                </div>
-                <div class="modal-body">
-                    <form id="betForm" method="post">
-                        <input type="hidden" name="machid" value="">
-                        <select type="hidden" name="tickid" value="">
-                        {% csrf_token %}
-                        <span id="odds"></span>
-                        <span id="rodds"></span>
-                        <span id="machname"></span>
-                        <input type="text" class="form-control" placeholder="# of pinbucks" name="value"/>
-                        <input type="text" class="form-control" placeholder="Comment" name="comment"/>
-                        <input type="checkbox" class="form-control" name="position">Position</input>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <button id="betbutton" type="button" class="btn btn-primary">Save changes</button>
-                </div>
-            </div>
-        </div>
-    </div>
     <script type="text/javascript">
+        $('#position').change(function() {
+            if ($(this).is(':checked')) {
+                $('#odds').show();
+                $('#rodds').hide();
+                $('#against').hide();
+            } else {
+                $('#rodds').show();
+                $('#odds').hide();
+                $('#against').show();
+            }
+        });
         $('#betForm').on('submit', function () {
             $.post('/bet/', $('#betForm').serialize(), function(data) {
                 if (data.result) {
-                var delay=300;
-                setTimeout(function () {
-                    refreshbets();
-                    refreshtix();
-                    $('input[name=comment]').val(undefined);
-                }, delay);
-                $('#betmodal').modal('hide');
+                    $("#error").hide();
+                    var delay=300;
+                    setTimeout(function () {
+                        refreshbets();
+                        refreshtix();
+                        $('input[name=comment]').val(undefined);
+                    }, delay);
+                    $('#betmodal').modal('hide');
                 } else {
-                    alert(data.message);
+                    $("#beterr").text(data.message);
+                    $("#error").show();
                 }
             }, "json"); //function (data) {
                 //console.log(data.result);
@@ -170,30 +165,99 @@ $('#betmodal').on('hidden.bs.modal', function () {
             $('#betForm').submit();
         });
     </script>
+    <div class="container">
+        {% if user.is_authenticated %} 
+        <div class="row">
+            <div class="span8 offset1"><h3>Your tickets</h3></div>
+        </div>
+        <div class="row">
+            <div class="span24">
+                <div class="accordion" id="tickaccordion">
+                {% for ticket in tickets %}
+                    <div class="accordion-group">
+                        <div class="accordion-header">
+                            <a class="accordion-toggle" data-toggle="collapse" data-parent="#tickaccordion" href="#collapse{{forloop.counter}}">
+                            #{{ ticket.id }} with {{ ticket.value }} available
+                            </a>
+                        </div>
+                        <div id="collapse{{forloop.counter}}" class="accordion-body collapse">
+                            <div class="accordion-inner">
+                                {% include "ticket.html" %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
 
 <div class="container">
     <div class="row">
+        <div class="span8 offset1"><h3>Odds Board</h3></div>
+    </div>
+    <div class="row">
         <div class="span3 offset1"><h5>Machine</h5></div>
-        <div class="span1"><h5>Odds in tourney</h5></div>
-        <div class="span1"><h5>Picks for</h5></div>
-        <div class="span1"><h5>Odds against</h5></div>
-        <div class="span1"><h5>Picks against</h5></div>
+        <div class="span2"><h5>Odds in tourney</h5></div>
+        <div class="span3"><h5># of picks (for / against)</h5></div>
     </div>
 {% for machine in machines %}
-    <p/>
+    <hr/>
     <div class="row">
         <div id={{ forloop.counter}}betbutton class="span1">
             <button type="button" data-toggle="modal" onClick="populate({{forloop.counter}}, {{machine.id}});" data-target="#betmodal" class="btn-sm btn-primary">Pick</button>
         </div>
         <div id={{ forloop.counter }}mach class="span3">{{ machine.name }}</div>
-        <div id={{ forloop.counter }}odds class="span1">{{ machine.current_odds }}:1</div>
-        <div id={{ forloop.counter }}betcount class="span1">{{ machine.bet_count|add:machine.reverse_bet_count }} ({{machine.bet_count}}/{{machine.reverse_bet_count}})</div>
-        <div id={{ forloop.counter }}rodds class="span1">{{ machine.current_reverse_odds }}:1</div>
-        <div id={{ forloop.counter }}rbetcount class="span1">{{ machine.reverse_bet_count}}</div>
-        <div id={{ forloop.counter }}aodds class="span1">{{ machine.odds_against}}:1</div>
+        <div class="span2">
+            <span id={{ forloop.counter }}odds>{{ machine.current_odds }}</span>:1
+        </div>
+        <div id={{ forloop.counter }}betcount class="span3">{{ machine.bet_count|add:machine.reverse_bet_count }} ({{machine.bet_count}} / {{machine.reverse_bet_count}})</div>
+            <span style="display:none" id={{ forloop.counter }}rodds>{{ machine.current_reverse_odds }}</span>
+        <!--<div id={{ forloop.counter }}aodds class="span1">{{ machine.odds_against}}:1</div>-->
         <!-- add pending -->
     </div>
 {% endfor %}
 </div>
+
+
+    <div class="modal fade" id="betmodal" role="dialog" aria-labelledby="bet model label" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="myModalLabel">What's your pick?</h4>
+                </div>
+                <div class="modal-body">
+                    <form id="betForm" method="post">
+                        <input type="hidden" name="machid" value="">
+                        <select type="hidden" name="tickid" value="">
+                        {% csrf_token %}
+                        <span id="against">Against</span>
+                        <b><span id="machname"></span></b>
+                         at <b><span id="odds"></span>
+                        <span id="rodds"></span></b> odds
+                        <input type="hidden" value='off' name="position">
+                        <label class="checkbox">
+                            <input id="position" type="checkbox" class="form-control" name="position" checked="checked" onkeypress='calcpayout()' onChange='calcpayout()' onSelect='$("#rodds".hide())' >Bet for?
+                        </label>
+                        <input type="number" onChange='calcpayout()' oninput='calcpayout()' onpaste='calcpayout()' onkeypress='calcpayout()' id="pinbucks" class="form-control" min="0" step="1" placeholder="# of pinbucks" name="value" data-bind="value:pinbucks"/>
+                        <input type="text" class="form-control" placeholder="Comment" name="comment"/>
+                    </form>
+                    <br>
+                    <div id="payout">Potential payout is <span id="payoutval">0</span> pinbucks</div>
+                    <div id="error" class="alert alert-error">
+                        <h5 class="alert-heading">Error</h4>
+                        <span id=beterr class="alert"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button id="betbutton" type="button" class="btn btn-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
