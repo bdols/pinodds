@@ -1,11 +1,11 @@
 
-<div id={{forloop.counter}}machine class="span5">
+<div id={{forloop.counter}}machine class="span3">
 {% if bet.position %}
 {{ bet.machine }}
 {% else %}
 Against {{ bet.machine }}
 {% endif %}
  at {{ bet.at_odds|floatformat:2 }}:1 </div>
-<div id={{forloop.counter}}time class="span3"> {{ bet.at_time }} </div>
-<div id={{forloop.counter}}comment class="span6"> {{ bet.comment}} </div>
+<div id={{forloop.counter}}time class="span2"> {{ bet.at_time }} </div>
+<div id={{forloop.counter}}comment class="span5"> {{ bet.comment}} </div>
 

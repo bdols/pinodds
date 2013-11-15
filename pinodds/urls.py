@@ -11,6 +11,8 @@ urlpatterns = patterns('',
     # url(r'^pinodds/', include('pinodds.foo.urls')),
 
     url(r'^table/', 'odds.views.table', name='table'),
+    url(r'^bet/', 'odds.views.bet', name='bet'),
+    url(r'^tickets/(?P<userid>[0-9+])$', 'odds.views.tickets', name='tickets'),
     #(r'^accounts/login/$', login),
     (r'^accounts/logout/$', 'django.contrib.auth.views.logout_then_login'),
     (r'^accounts/', include('registration.backends.default.urls')),

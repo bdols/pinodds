@@ -81,6 +81,9 @@ class PinUser(models.Model):
     @property
     def reverse_bet_count(self):
         return self.bet_set.filter(position=False).count()
+    @property
+    def open_tickets(self):
+        return Ticket.objects.filter(user=self)
     def __unicode__(self):
         return "%s's profiles" % self.account.username 
 
@@ -93,6 +96,14 @@ post_save.connect(create_pinuser, sender=User)
 class Ticket(models.Model):
     user = models.ForeignKey("PinUser")
     available_value = models.IntegerField()
+    @property
+    def value(self):
+        ret = self.available_value
+        for b in self.bet_set.all():
+            ret -= b.value
+        return ret
+    def __unicode__(self):
+        return "%s %s" % (self.user.account.username, self.available_value)
 
 class Bet(models.Model):
     machine = models.ForeignKey('Machine')

@@ -30,9 +30,23 @@ function refreshbets() {
         process(data);
     }); 
 }
+{% if user.is_authenticated %}
+function refreshtix() {
+    $.getJSON("/tickets/" + {{ user.id }}, function(data) {
+        $("select[name=tickid]").children().remove();
+        $.each(data, function (key, value) {
+            $("select[name=tickid]").append($("<option></option>").attr("value",value.tickid).text("Ticket " + value.tickid+ " with " + value.value + " pinbucks left"));
+        });
+    });
+}
+window.setInterval(refreshtix,10000);
+{% endif %}
 window.setInterval(refreshbets,10000);
 $(document).ready(function () {
-refreshbets;
+refreshbets();
+{% if user.is_authenticated %}
+refreshtix();
+{% endif %}
 $('#betmodal').on('hidden.bs.modal', function () {
     var ff= $(this).attr("id");
 });
@@ -41,65 +55,67 @@ $('#betmodal').on('hidden.bs.modal', function () {
 </script>
 </head>
 <body>
-    <div class="row">
-        <div class="span1 offset2">
-        {% if user.is_authenticated %}
-            <a href={% url 'django.contrib.auth.views.logout_then_login' %}>Log out</a>
-        {% else %}
-            <a href={% url 'django.contrib.auth.views.login' %}>Log in</a>
-        {% endif %}
+    <div class="container">
+        <div class="row">
+            <div class="span1 offset2">
+            {% if user.is_authenticated %}
+                <a href={% url 'django.contrib.auth.views.logout_then_login' %}>Log out</a>
+            {% else %}
+                <a href={% url 'django.contrib.auth.views.login' %}>Log in</a>
+            {% endif %}
+            </div>
+            <div id="status" class="span-3">
+            {% if user.is_authenticated %}
+            Logged in as {{ user.username }}
+            {% else %}
+            <B>Not logged in</B>
+            {% endif %}
+             </div>
+            {% if not user.is_authenticated %}
+            <div id="register" class="span-2">
+                <a href={% url 'registration_register' %}>Register</a>
+            </div>
+            {% endif %}
+            <div id="tickets" class="span-2">
+            {% if user.is_authenticated %} Tickets<br>
+            {% for ticket in tickets %}
+                #{{ ticket.id }} with {{ ticket.value }} available<br>
+                {% include "ticket.html" %}
+                <hr>
+            {% endfor %}
+            {% endif %}
+            </div>
+
+
         </div>
-        <div id="status" class="span-3">
-        {% if user.is_authenticated %}
-        Logged in as {{ user.username }}
-        {% else %}
-        <B>Not logged in</B>
-        {% endif %}
-         </div>
-        {% if not user.is_authenticated %}
-        <div id="register" class="span-2">
-            <a href={% url 'registration_register' %}>Register</a>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="span8 offset1"><h3>Last 5 bets</h3></div>
         </div>
-        {% endif %}
+        <div class="row">
+            <div class="span1"><h5>User</h5></div>
+            <div class="span3"><h5>Pick</h5></div>
+            <div class="span2"><h5>Time</h5></div>
+            <div class="span5"><h5>Comment</h5></div>
+        </div>
+        <div id="last5">
+        {% for bet in last5bets %}
+        <div class="row">
+            <div id={{forloop.counter}}user class="span1">{{ bet.user }}</div>
+            {% include "bet.html" %}
+        </div>
+        {% endfor %}
+        </div>
     </div>
-    <div class="row">
-        <div class="span8 offset1"><h3>Last 5 bets</h3></div>
-    </div>
-    <div class="row">
-        <div class="span1"><h5>User</h5></div>
-        <div class="span5"><h5>Bet</h5></div>
-        <div class="span3"><h5>Time</h5></div>
-        <div class="span6"><h5>Comment</h5></div>
-    </div>
-    <div id="last5">
-    {% for bet in last5bets %}
-    <div class="row">
-        <div id={{forloop.counter}}user class="span1">{{ bet.user }}</div>
-        {% include "bet.html" %}
-    </div>
-    {% endfor %}
-    </div>
-    {% for user in users %}
-    <div class="row">
-        <div class="span1">{{ user }}</div>
-        <div class="span1">{{ user.total_bets }}</div>
-        <div class="span1">{{ user.bet_count }}</div>
-        <div class="span1">{{ user.reverse_bet_count }}</div>
-    </div>
-    {% for bet in user.bet_set.all %}
-    <div class="row">
-        <div class="span1"></div>
-        {% include "bet.html" %}
-    </div>
-    {% endfor %}
-    {% endfor %}
-    <div class="row">
-        <div class="span4 offset1">Machine</div>
-        <div class="span2">Odds in tourney</div>
-        <div class="span2">Bets for</div>
-        <div class="span2">Odds not in tourney</div>
-        <div class="span2">Bets against</div>
-    </div>
+<script>
+    function populate(counter,machid) {
+        $('input[name=machid]').val(machid);
+        $('#machname').text($('#'+counter+'mach').text());
+        $('#odds').text($('#'+counter+'odds').text());
+        $('#rodds').text($('#'+counter+'rodds').text());
+    }
+</script>
     <div class="modal fade" id="betmodal" role="dialog" aria-labelledby="bet model label" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -108,41 +124,76 @@ $('#betmodal').on('hidden.bs.modal', function () {
                     <h4 class="modal-title" id="myModalLabel">What's your bet?</h4>
                 </div>
                 <div class="modal-body">
-                    <div id="machid" style="display: none"></div>
-                    <div id="machname"></div>
-                    <div id="odds"></div>
-                    <div id="rodds" style="display:none"></div>
-                    <input type="text" class="form-control" placeholder="# of pinbucks" id="value"></div>
+                    <form id="betForm" method="post">
+                        <input type="hidden" name="machid" value="">
+                        <select type="hidden" name="tickid" value="">
+                        {% csrf_token %}
+                        <span id="odds"></span>
+                        <span id="rodds"></span>
+                        <span id="machname"></span>
+                        <input type="text" class="form-control" placeholder="# of pinbucks" name="value"/>
+                        <input type="text" class="form-control" placeholder="Comment" name="comment"/>
+                        <input type="checkbox" class="form-control" name="position">Position</input>
+                    </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Save changes</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button id="betbutton" type="button" class="btn btn-primary">Save changes</button>
                 </div>
             </div>
         </div>
     </div>
-<script>
-    function populate(counter,machid) {
-        $('#machid').text(machid);
-        $('#machname').text($('#'+counter+'mach').text());
-        $('#odds').text($('#'+counter+'odds').text());
-        $('#rodds').text($('#'+counter+'rodds').text());
-    }
-</script>
+    <script type="text/javascript">
+        $('#betForm').on('submit', function () {
+            $.post('/bet/', $('#betForm').serialize(), function(data) {
+                if (data.result) {
+                var delay=300;
+                setTimeout(function () {
+                    refreshbets();
+                    refreshtix();
+                    $('input[name=comment]').val(undefined);
+                }, delay);
+                $('#betmodal').modal('hide');
+                } else {
+                    alert(data.message);
+                }
+            }, "json"); //function (data) {
+                //console.log(data.result);
+                //alert(data.result);
+            //});
+            return false;
+        });
+
+
+        $('#betbutton').on('click', function (e) {
+            e.preventDefault();
+            $('#betForm').submit();
+        });
+    </script>
+
+<div class="container">
+    <div class="row">
+        <div class="span3 offset1"><h5>Machine</h5></div>
+        <div class="span1"><h5>Odds in tourney</h5></div>
+        <div class="span1"><h5>Picks for</h5></div>
+        <div class="span1"><h5>Odds against</h5></div>
+        <div class="span1"><h5>Picks against</h5></div>
+    </div>
 {% for machine in machines %}
-    <p>
+    <p/>
     <div class="row">
         <div id={{ forloop.counter}}betbutton class="span1">
-            <button type="button" data-toggle="modal" onClick="populate({{forloop.counter}}, {{machine.id}});" data-target="#betmodal" class="btn btn-primary">Bet</button>
+            <button type="button" data-toggle="modal" onClick="populate({{forloop.counter}}, {{machine.id}});" data-target="#betmodal" class="btn-sm btn-primary">Pick</button>
         </div>
-        <div id={{ forloop.counter }}mach class="span4">{{ machine.name }}</div>
-        <div id={{ forloop.counter }}odds class="span2">{{ machine.current_odds }}:1</div>
-        <div id={{ forloop.counter }}betcount class="span2">{{ machine.bet_count}}</div>
-        <div id={{ forloop.counter }}rodds class="span2">{{ machine.current_reverse_odds }}:1</div>
-        <div id={{ forloop.counter }}rbetcount class="span2">{{ machine.reverse_bet_count}}</div>
-        <div id={{ forloop.counter }}aodds class="span2">{{ machine.odds_against}}:1</div>
+        <div id={{ forloop.counter }}mach class="span3">{{ machine.name }}</div>
+        <div id={{ forloop.counter }}odds class="span1">{{ machine.current_odds }}:1</div>
+        <div id={{ forloop.counter }}betcount class="span1">{{ machine.bet_count|add:machine.reverse_bet_count }} ({{machine.bet_count}}/{{machine.reverse_bet_count}})</div>
+        <div id={{ forloop.counter }}rodds class="span1">{{ machine.current_reverse_odds }}:1</div>
+        <div id={{ forloop.counter }}rbetcount class="span1">{{ machine.reverse_bet_count}}</div>
+        <div id={{ forloop.counter }}aodds class="span1">{{ machine.odds_against}}:1</div>
         <!-- add pending -->
     </div>
 {% endfor %}
+</div>
 </body>
 </html>
