@@ -15,8 +15,10 @@ def table(request):
     data['machines']=[]
     for s in SampleSet.latest().oddssample_set.order_by('value'):
         data['machines'].append(s.machine)
-    data['bets']=Bet.objects.filter(user=PinUser.objects.all()[0])
-    data['tickets']=PinUser.objects.get(account=request.user).open_tickets
+    data['tickets']=[]
+    if request.user.id:
+        print request.user
+        data['tickets']=PinUser.objects.get(account=request.user.id).open_tickets
     data['users']=PinUser.objects.annotate(total=Count('bet')).order_by('total')
     data['last5bets']=form_bets_data()
     return render_to_response("table.html",data,context_instance = RequestContext(request))
@@ -26,7 +28,10 @@ def bet(request):
     try:
         if not request.user.is_authenticated:
             raise Exception, "Unauthorized. Please login"
-        ticket=Ticket.objects.get(id=int(request.POST['tickid']))
+        try:
+            ticket=Ticket.objects.get(id=int(request.POST['tickid']))
+        except:
+            raise Exception, "Need to specify ticket. Are you logged in?"
         try:
             value=int(request.POST['value'])
             if value<0:

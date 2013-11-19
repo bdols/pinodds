@@ -90,6 +90,11 @@ class PinUser(models.Model):
 def create_pinuser(sender, instance, created, **kwargs):
     if created:
         profile,created = PinUser.objects.get_or_create(account=instance)
+        if created:
+            print "create ticket"
+            Ticket.objects.create(user=profile,available_value=1000)
+            print "created ticket"
+
 
 post_save.connect(create_pinuser, sender=User)
 

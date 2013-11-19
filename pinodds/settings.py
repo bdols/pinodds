@@ -12,7 +12,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': '/drr/pinodds/db.sqlite',                      # Or path to database file if using sqlite3.
+        'NAME': '/app/bcpcdsd/dist/db.sqlite',                      # Or path to database file if using sqlite3.
         # The following settings are not used with sqlite3:
         'USER': '',
         'PASSWORD': '',
@@ -23,7 +23,7 @@ DATABASES = {
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["bcpcdsd.f88888888.net","localhost","pinecronomicon.com"]
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -50,7 +50,7 @@ USE_TZ = True
 
 ACCOUNT_ACTIVATION_DAYS=2
 EMAIL_HOST='localhost'
-DEFAULT_FROM_EMAIL="webmaster@localhost"
+DEFAULT_FROM_EMAIL="webmaster@bcpcdsd.f88888888.net"
 AUTH_PROFILE_MODULE='odds.PinUser'
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
@@ -66,7 +66,7 @@ MEDIA_URL = ''
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/var/www/example.com/static/"
-STATIC_ROOT = ''
+STATIC_ROOT = "/app/bcpcdsd/dist/static/"
 
 # URL prefix for static files.
 # Example: "http://example.com/static/", "http://static.example.com/"
@@ -77,7 +77,7 @@ STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    "/drr/pinodds/pinodds/static/",
+    "/app/bcpcdsd/dist/static/",
 )
 
 # List of finder classes that know how to find static files in
@@ -115,7 +115,7 @@ WSGI_APPLICATION = 'pinodds.wsgi.application'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    "/drr/pinodds/pinodds/templates"
+    "/app/bcpcdsd/dist/templates"
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
 )

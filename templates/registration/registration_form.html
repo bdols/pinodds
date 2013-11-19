@@ -1,9 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Register for the Pinecronomicon{% endblock %}
 
 {% block content %}
-<form method="post" action=".">
+<form role="form" class="form-inline" method="post" action=".">
   {% csrf_token %}
-  {{ form.as_p }}
 
-  <input type="submit" value="Submit" />
+
+<div class="container">
+    <div class="row">
+        <div class="form-group">
+            <label for="id_username" class="control-label">Username:</label>
+            <input id="id_username" class="form-control" name="username" type="text" oldautocomplete="remove" autocomplete="off" autocapitalize="off" autocorrect="off">
+        </div>
+    </div>
+    <div class="row">
+        <div class="form-group">
+            <label for="id_email" class="control-label">E-mail:</label>
+            <input id="id_email" class="form-control" name="email" type="email" oldautocomplete="remove" autocomplete="off" autocapitalize="off" autocorrect="off">
+        </div>
+    </div>
+    <div class="row">
+        <div class="form-group">
+            <label for="id_password1" class="control-label">Password</label>
+            <input id="id_password1" class="form-control" name="password1" type="password" oldautocomplete="remove" autocomplete="off" autocapitalize="off" autocorrect="off">
+        </div>
+    </div>
+    <div class="row">
+        <div class="form-group">
+            <label for="id_password2" class="control-label">Password (again):</label>
+            <input id="id_password2" class="form-control" name="password2" type="password" oldautocomplete="remove" autocomplete="off" autocapitalize="off" autocorrect="off">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="form-group">
+            <button type="submit" class="btn btn-default" value="Register">Register</button>
+        </div>
+    </div>
+</div>
+
 </form>
 {% endblock %}

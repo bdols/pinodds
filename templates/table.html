@@ -1,35 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-{% load staticfiles %}
-{% load humanize %}
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-<link href="{% static "bootstrap/css/bootstrap.min.css" %}" rel="stylesheet">
-<script src="{% static "bootstrap/js/bootstrap.min.js" %}"></script>
-<script>
-function processBet(data,i){
-    var idx=i+1;
-    $("#"+idx+"time").text(data.at_time);
-    $("#"+idx+"comment").text(data.comment);
-    if (data.position) {
-        $("#"+idx+"machine").text(data.machine + " at " + data.at_odds + ":1");
-    } else {
-        $("#"+idx+"machine").text("Against " + data.machine + " at " + data.at_odds + ":1");
-    }
-    $("#"+idx+"user").text(data.user);
-}
+{% extends "base.html" %}
 
-function process(data) {
-    for (var idx=0; idx<data.bets.length; ++idx) {
-        processBet(data.bets[idx],idx);
+{% block title %}Pick the machines at the Pinballz PAPA Circuit Event{% endblock %}
+
+{% block head %}
+<style>
+body {
+    background-repeat: no-repeat;
+    background-position: right top;
+}
+#pinecronomicon { 
+    background-repeat: repeat-y;
+    background-position: left;
+}
+#pinecronomicon { background-image: url('/static/img/pinecronomicon-sidebar-sm.jpg'); }
+@media only screen and (min-width: 320px) {
+    #pinecronomicon { 
+        background-image: url('/static/img/pinecronomicon-sidebar-sm.jpg'); 
+        padding: 0 20px;
     }
 }
+@media only screen and (min-width: 930px) {
+    #pinecronomicon {
+        background-image: url('/static/img/pinecronomicon-sidebar.jpg');
+        padding: 0 100px;
+    }
+}
+</style>
+<script>
 function refreshbets() {
     $.getJSON("/last5/",function (data) { 
         process(data);
     }); 
 }
+
 {% if user.is_authenticated %}
 var in_tix_modal=false;
 function refreshtix() {
@@ -57,32 +60,82 @@ $(document).ready(function () {
     $('#betmodal').on('hidden', function () {
         in_tix_modal=false;
     });
+
+    $('#position').change(function() {
+        if ($(this).is(':checked')) {
+            $('#odds').show();
+            $('#rodds').hide();
+            $('#against').hide();
+        } else {
+            $('#rodds').show();
+            $('#odds').hide();
+            $('#against').show();
+        }
+    });
+    $('#betForm').on('submit', function () {
+        $.post('/bet/', $('#betForm').serialize(), function(data) {
+            if (data.result) {
+                $("#error").hide();
+                var delay=300;
+                setTimeout(function () {
+                    refreshbets();
+                    refreshtix();
+                    $('input[name=comment]').val(undefined);
+                }, delay);
+                $('#betmodal').modal('hide');
+            } else {
+                $("#beterr").text(data.message);
+                $("#error").show();
+            }
+        }, "json");
+        return false;
+    });
+
+    $('#betbutton').on('click', function (e) {
+        e.preventDefault();
+        $('#betForm').submit();
+    });
+
 });
 </script>
-</head>
-<body>
+{% endblock %}
+{% block content %}
+<div id="pinecronomicon">
     <div class="container">
         <div class="row">
-            <div class="span1 offset2">
-            {% if user.is_authenticated %}
-                <a href={% url 'django.contrib.auth.views.logout_then_login' %}>Log out</a>
-            {% else %}
-                <a href={% url 'django.contrib.auth.views.login' %}>Log in</a>
-            {% endif %}
+            <div id="loginholder" class="col-sm-12">
             </div>
-            <div id="status" class="span-3">
+        </div>
+        <div class="row">
+            <div class="col-sm-1">
+            <h5>
+            {% if user.is_authenticated %}
+                <!-- <a href={% url 'django.contrib.auth.views.logout' %}>Log out</a> -->
+                <a href=# onClick='$("#loginholder").load("/accounts/logout/");'>Log out</a>
+            {% else %}
+                <!-- <a href={% url 'django.contrib.auth.views.login' %}>Log in</a> -->
+                <a href=# onClick='$("#loginholder").load("/accounts/login/ #content");'>Log in</a>
+            {% endif %}
+            </h5>
+            </div>
+            {% if not user.is_authenticated %}
+            <div id="register" class="col-sm-1">
+                <h5>
+                    <!-- <a href={% url 'registration_register' %}>Register</a> -->
+                <a href=# onClick='$("#loginholder").load("{% url 'registration_register' %} #content");'>Register</a>
+                </h5>
+            </div>
+            {% endif %}
+            <div id="status" class="col-sm-3">
+            <h5>
             {% if user.is_authenticated %}
             Logged in as {{ user.username }}
             {% else %}
             <B>Not logged in</B>
             {% endif %}
+            </h5>
              </div>
-            {% if not user.is_authenticated %}
-            <div id="register" class="span-2">
-                <a href={% url 'registration_register' %}>Register</a>
-            </div>
-            {% endif %}
-            <div id="tickets" class="span-2">
+            <div id="tickets" class="col-sm-2">
             </div>
 
 
@@ -90,88 +143,61 @@ $(document).ready(function () {
     </div>
     <div class="container">
         <div class="row">
-            <div class="span8 offset1"><h3>Last 5 bets</h3></div>
-        </div>
-        <div class="row">
-            <div class="span1"><h5>Login</h5></div>
-            <div class="span3"><h5>Pick</h5></div>
-            <div class="span2"><h5>Time</h5></div>
-            <div class="span5"><h5>Comment</h5></div>
-        </div>
-        <div id="last5">
-        {% for bet in last5bets %}
-        <div class="row">
-            <div id={{forloop.counter}}user class="span1">{{ bet.user }}</div>
-            {% include "bet.html" %}
-        </div>
-        {% endfor %}
+            <div class="col-sm-12 ">
+            <h5>Pick which pinball machines that you will think will be used in the Pinballz PAPA Circuit Event on Dec 6th-Dec 8th.</h5>
+            There will be 9 pins used. Once you create an account, you will have an amount of pinbucks on a ticket that you can use
+            to pick with. A day or two before the event, entries will be closed and the person with the most accurate entries wins (nothing?).
+            You can also pick against a pin being used with a lower payout.<br>
+            The odds are recalculated based on how everyone picks, with enough picks for a pin causing it to rise on the odds board.
+            </div>
         </div>
     </div>
-<script>
-    function populate(counter,machid) {
-        $('input[name=machid]').val(machid);
-        $('#machname').text($('#'+counter+'mach').text());
-        $('#odds').text($('#'+counter+'odds').text());
-        $('#rodds').text($('#'+counter+'rodds').text());
-        $('#odds').show();
-        $('#rodds').hide();
-        $('#against').hide();
-    }
-    function calcpayout() {
-        if ($("#position").is(':checked')) {
-            $('#payoutval').text($('#odds').text() * $("#pinbucks").val());
-        } else {
-            $('#payoutval').text($('#rodds').text() * $("#pinbucks").val());
-        }
-    }
-</script>
-    <script type="text/javascript">
-        $('#position').change(function() {
-            if ($(this).is(':checked')) {
-                $('#odds').show();
-                $('#rodds').hide();
-                $('#against').hide();
-            } else {
-                $('#rodds').show();
-                $('#odds').hide();
-                $('#against').show();
-            }
-        });
-        $('#betForm').on('submit', function () {
-            $.post('/bet/', $('#betForm').serialize(), function(data) {
-                if (data.result) {
-                    $("#error").hide();
-                    var delay=300;
-                    setTimeout(function () {
-                        refreshbets();
-                        refreshtix();
-                        $('input[name=comment]').val(undefined);
-                    }, delay);
-                    $('#betmodal').modal('hide');
-                } else {
-                    $("#beterr").text(data.message);
-                    $("#error").show();
-                }
-            }, "json"); //function (data) {
-                //console.log(data.result);
-                //alert(data.result);
-            //});
-            return false;
-        });
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-8 offset1"><h3>Last 5 picks</h3></div>
+        </div>
+        <div id="last5">
+            <div class="row">
+                <div id=1machine class="col-sm-6 col-xs-6"></div>
+                <div id=1comment class="col-sm-6 col-xs-6"></div>
+                <div class="col-sm-6 col-xs-6"><p id=1time class="text-right"></p></div>
+                <div class="col-sm-6 col-xs-6"><p id=1user class="text-right"></p></div>
+            </div>
+            <div class="row">
+                <div id=2machine class="col-sm-6 col-xs-6"></div>
+                <div id=2comment class="col-sm-6 col-xs-6"></div>
+                <div class="col-sm-6 col-xs-6"><p id=2time class="text-right"></p></div>
+                <div class="col-sm-6 col-xs-6"><p id=2user class="text-right"></p></div>
+            </div>
+            <div class="row">
+                <div id=3machine class="col-sm-6 col-xs-6"></div>
+                <div id=3comment class="col-sm-6 col-xs-6"></div>
+                <div class="col-sm-6 col-xs-6"><p id=3time class="text-right"></p></div>
+                <div class="col-sm-6 col-xs-6"><p id=3user class="text-right"></p></div>
+            </div>
 
+            <div class="row">
+                <div id=4machine class="col-sm-6 col-xs-6"></div>
+                <div id=4comment class="col-sm-6 col-xs-6"></div>
+                <div class="col-sm-6 col-xs-6"><p id=4time class="text-right"></p></div>
+                <div class="col-sm-6 col-xs-6"><p id=4user class="text-right"></p></div>
+            </div>
 
-        $('#betbutton').on('click', function (e) {
-            e.preventDefault();
-            $('#betForm').submit();
-        });
-    </script>
+            <div class="row">
+                <div id=5machine class="col-sm-6 col-xs-6"></div>
+                <div id=5comment class="col-sm-6 col-xs-6"></div>
+                <div class="col-sm-6 col-xs-6"><p id=5time class="text-right"></p></div>
+                <div class="col-sm-6 col-xs-6"><p id=5user class="text-right"></p></div>
+            </div>
+        </div>
+    </div>
     <div class="container">
         {% if user.is_authenticated %} 
         <div class="row">
-            <div class="span8 offset1"><h3>Your tickets</h3></div>
+            <div class="col-sm-8 offset1"><h3>Your tickets</h3></div>
         </div>
         <div class="row">
-            <div class="span24">
+            <div class="col-sm-24">
                 <div class="accordion" id="tickaccordion">
                 {% for ticket in tickets %}
                     <div class="accordion-group">
@@ -195,29 +221,56 @@ $(document).ready(function () {
 
 <div class="container">
     <div class="row">
-        <div class="span8 offset1"><h3>Odds Board</h3></div>
-    </div>
-    <div class="row">
-        <div class="span3 offset1"><h5>Machine</h5></div>
-        <div class="span2"><h5>Odds in tourney</h5></div>
-        <div class="span3"><h5># of picks (for / against)</h5></div>
-    </div>
-{% for machine in machines %}
-    <hr/>
-    <div class="row">
-        <div id={{ forloop.counter}}betbutton class="span1">
-            <button type="button" data-toggle="modal" onClick="populate({{forloop.counter}}, {{machine.id}});" data-target="#betmodal" class="btn-sm btn-primary">Pick</button>
+        <div class="col-sm-8 col-xs-8">
+            <h3>Odds Board</h3>
         </div>
-        <div id={{ forloop.counter }}mach class="span3">{{ machine.name }}</div>
-        <div class="span2">
+    </div>
+    <div class="row">
+    <div class="col-md-12 col-sm-12">
+    <table class="table table-hover">
+        <tr>
+            <th/>
+            <th >Machine</th>
+            <th >Odds</th>
+            <th ># of picks (for/against)</th>
+        </tr>
+    
+{% for machine in machines %}
+    <tr >
+        <td width=10%>
+            <button type="button" data-toggle="modal" onClick="populate({{forloop.counter}}, {{machine.id}}, false);" data-target="#betmodal" class="btn btn-sm btn-primary">Pick</button><p>
+        </td>
+        <td width=50%><span id={{forloop.counter}}mach>{{ machine.name }}</span></td>
+        <td width=10%><span id={{forloop.counter}}odds>{{machine.current_odds}}:1</span></td>
+        <td width=10%><span id={{forloop.coutner}}betcount>{{ machine.bet_count|add:machine.reverse_bet_count }} ({{machine.bet_count}} / {{machine.reverse_bet_count}})</span></td>
+        <td width=20%>
+            <button type="button" data-toggle="modal" onClick="populate({{forloop.counter}}, {{machine.id}}, true);" data-target="#betmodal" class="btn btn-default " >Pick against</button>
+            <span style="display:none" id={{ forloop.counter }}rodds>{{ machine.current_reverse_odds }}</span>
+        </td>
+    </tr>
+{% endfor %}
+    </table>
+<!--
+{% for machine in machines %}
+    <div class="row">
+        <hr/>
+        <div id={{ forloop.counter}}betbutton class="col-sm-1 col-xs-2">
+            <button type="button" data-toggle="modal" onClick="populate({{forloop.counter}}, {{machine.id}}, false);" data-target="#betmodal" class="btn btn-sm btn-primary">Pick</button>
+        </div>
+        <div id={{ forloop.counter }}mach class="col-sm-3 col-xs-3">{{ machine.name }}</div>
+        <div class="col-sm-2 col-xs-2">
             <span id={{ forloop.counter }}odds>{{ machine.current_odds }}</span>:1
         </div>
-        <div id={{ forloop.counter }}betcount class="span3">{{ machine.bet_count|add:machine.reverse_bet_count }} ({{machine.bet_count}} / {{machine.reverse_bet_count}})</div>
-            <span style="display:none" id={{ forloop.counter }}rodds>{{ machine.current_reverse_odds }}</span>
-        <!--<div id={{ forloop.counter }}aodds class="span1">{{ machine.odds_against}}:1</div>-->
-        <!-- add pending -->
+        <div id={{ forloop.counter }}betcount class="col-sm-3 col-xs-3">{{ machine.bet_count|add:machine.reverse_bet_count }} ({{machine.bet_count}} / {{machine.reverse_bet_count}})</div>
+        <div id={{ forloop.counter}}agnstbutton class="col-sm-2 col-xs-2">
+            <button type="button" class="red" data-toggle="modal" onClick="populate({{forloop.counter}}, {{machine.id}}, true);" data-target="#betmodal" class="btn-default btn" style="height:70px;width:70px;" >Pick against</button>
+        </div>
+        <span style="display:none" id={{ forloop.counter }}rodds>{{ machine.current_reverse_odds }}</span>
     </div>
 {% endfor %}
+-->
+    </div>
+    </div>
 </div>
 
 
@@ -229,26 +282,45 @@ $(document).ready(function () {
                     <h4 class="modal-title" id="myModalLabel">What's your pick?</h4>
                 </div>
                 <div class="modal-body">
-                    <form id="betForm" method="post">
+                    <form role="form" class="form-inline" id="betForm" method="post">
                         <input type="hidden" name="machid" value="">
-                        <select type="hidden" name="tickid" value="">
-                        {% csrf_token %}
-                        <span id="against">Against</span>
-                        <b><span id="machname"></span></b>
-                         at <b><span id="odds"></span>
-                        <span id="rodds"></span></b> odds
+                        <div class="row">
+                            <div class="col-md-8 col-xs-8 ">
+                            <select type="hidden" name="tickid" value="">
+                            {% csrf_token %}
+                            <span id="against">Against &nbsp;</span>
+                            <b><span id="machname"></span></b>
+                             at <b><span id="odds"></span>
+                            <span id="rodds"></span></b> odds
+                            </div>
+                        </div>
                         <input type="hidden" value='off' name="position">
-                        <label class="checkbox">
-                            <input id="position" type="checkbox" class="form-control" name="position" checked="checked" onkeypress='calcpayout()' onChange='calcpayout()' onSelect='$("#rodds".hide())' >Bet for?
-                        </label>
-                        <input type="number" onChange='calcpayout()' oninput='calcpayout()' onpaste='calcpayout()' onkeypress='calcpayout()' id="pinbucks" class="form-control" min="0" step="1" placeholder="# of pinbucks" name="value" data-bind="value:pinbucks"/>
-                        <input type="text" class="form-control" placeholder="Comment" name="comment"/>
+                        <div class="row">
+                            <div class="col-md-8 col-xs-8 checkbox">
+                            <label>
+                                <input type="checkbox" checked="checked" name="position" id="position" onkeypress='calcpayout()' onChange='calcpayout()' onSelect='$("#rodds".hide())'>Bet for?
+                            </label>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 col-xs-6">
+                                <input type="number" onChange='calcpayout()' oninput='calcpayout()' onpaste='calcpayout()' onkeypress='calcpayout()' id="pinbucks" class="form-control" min="0" step="1" placeholder="# of pinbucks" name="value" data-bind="value:pinbucks" oldautocomplete="remove" autocomplete="off"/>
+                            </div>
+                            <div class="col-md-6 col-xs-6">
+                                <!--<input type="text" class="form-control" placeholder="Comment" name="comment"/>-->
+                                <textarea cols=50 rows=4 class="form-control" placeholder="Comment" name="comment"></textarea>
+                            </div>
+                        </div>
                     </form>
-                    <br>
-                    <div id="payout">Potential payout is <span id="payoutval">0</span> pinbucks</div>
+                    <div class="row">
+                    <div class="col-md-6 col-xs-8" id="payout">Potential payout is <span id="payoutval">0</span> pinbucks</div>
+                    </div>
+                    <div class="row">
                     <div id="error" class="alert alert-error">
                         <h5 class="alert-heading">Error</h4>
                         <span id=beterr class="alert"></span>
+                    </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -258,6 +330,5 @@ $(document).ready(function () {
             </div>
         </div>
     </div>
-
-</body>
-</html>
+</div>
+{% endblock %}
