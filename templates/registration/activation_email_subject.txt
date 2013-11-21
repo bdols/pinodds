@@ -1,1 +1,1 @@
-Account activation on {{ site.name }}
+Activate the portal into {{ site.name }}

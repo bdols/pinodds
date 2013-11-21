@@ -1,10 +1,14 @@
-You can now activate your account at {{ site.name }}:
+Greetings,
 
+By creating an account at {{ site.name }}, you enter a portal that gives access to
+dark, forbidden knowledge.
+
+May the days until your impending madness be long!
+
+This link will activate your account and the link is valid for {{ expiration_days }} days.
 http://{{ site.domain }}{% url 'registration_activate' activation_key %}
 
-This link is valid for {{ expiration_days }} days.
 
-Enjoy
 
 
 
