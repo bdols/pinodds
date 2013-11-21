@@ -8,6 +8,12 @@ body {
     background-repeat: no-repeat;
     background-position: right top;
 }
+img.imgoverlay {
+    position:absolute;
+    left:10%;
+    top:5%;
+}
+
 #pinecronomicon { 
     background-repeat: repeat-y;
     background-position: left;
@@ -72,17 +78,32 @@ $(document).ready(function () {
             $('#against').show();
         }
     });
+    $('#betboom').on('click', function (e) {
+        overlayhtml = "<img class='imgoverlay' src='/static/img/necronomicon.png' width=300px>"
+        $("#imgoverlay").append(overlayhtml).fadeIn('slow');
+        var delay=700;
+        setTimeout(function () {
+            $(".imgoverlay").fadeOut('slow', function() {
+                $(".imgoverlay").remove();
+            });
+        }, delay);
+    });
     $('#betForm').on('submit', function () {
         $.post('/bet/', $('#betForm').serialize(), function(data) {
             if (data.result) {
                 $("#error").hide();
-                var delay=300;
+                overlayhtml = "<img class='imgoverlay' src='/static/img/necronomicon.png' width=300px>"
+                $("#imgoverlay").append(overlayhtml).fadeIn('slow');
+                var delay=700;
                 setTimeout(function () {
                     refreshbets();
                     refreshtix();
                     $('input[name=comment]').val(undefined);
+                    $(".imgoverlay").fadeOut('slow', function() {
+                        $(".imgoverlay").remove();
+                        $('#betmodal').modal('hide');
+                    });
                 }, delay);
-                $('#betmodal').modal('hide');
             } else {
                 $("#beterr").text(data.message);
                 $("#error").show();
@@ -241,7 +262,7 @@ $(document).ready(function () {
             <button type="button" data-toggle="modal" onClick="populate({{forloop.counter}}, {{machine.id}}, false);" data-target="#betmodal" class="btn btn-sm btn-primary">Pick</button><p>
         </td>
         <td width=50%><span id={{forloop.counter}}mach>{{ machine.name }}</span></td>
-        <td width=10%><span id={{forloop.counter}}odds>{{machine.current_odds}}:1</span></td>
+        <td width=10%><span id={{forloop.counter}}odds>{{machine.current_odds}}</span>:1</td>
         <td width=10%><span id={{forloop.coutner}}betcount>{{ machine.bet_count|add:machine.reverse_bet_count }} ({{machine.bet_count}} / {{machine.reverse_bet_count}})</span></td>
         <td width=20%>
             <button type="button" data-toggle="modal" onClick="populate({{forloop.counter}}, {{machine.id}}, true);" data-target="#betmodal" class="btn btn-default " >Pick against</button>
@@ -250,25 +271,6 @@ $(document).ready(function () {
     </tr>
 {% endfor %}
     </table>
-<!--
-{% for machine in machines %}
-    <div class="row">
-        <hr/>
-        <div id={{ forloop.counter}}betbutton class="col-sm-1 col-xs-2">
-            <button type="button" data-toggle="modal" onClick="populate({{forloop.counter}}, {{machine.id}}, false);" data-target="#betmodal" class="btn btn-sm btn-primary">Pick</button>
-        </div>
-        <div id={{ forloop.counter }}mach class="col-sm-3 col-xs-3">{{ machine.name }}</div>
-        <div class="col-sm-2 col-xs-2">
-            <span id={{ forloop.counter }}odds>{{ machine.current_odds }}</span>:1
-        </div>
-        <div id={{ forloop.counter }}betcount class="col-sm-3 col-xs-3">{{ machine.bet_count|add:machine.reverse_bet_count }} ({{machine.bet_count}} / {{machine.reverse_bet_count}})</div>
-        <div id={{ forloop.counter}}agnstbutton class="col-sm-2 col-xs-2">
-            <button type="button" class="red" data-toggle="modal" onClick="populate({{forloop.counter}}, {{machine.id}}, true);" data-target="#betmodal" class="btn-default btn" style="height:70px;width:70px;" >Pick against</button>
-        </div>
-        <span style="display:none" id={{ forloop.counter }}rodds>{{ machine.current_reverse_odds }}</span>
-    </div>
-{% endfor %}
--->
     </div>
     </div>
 </div>
@@ -276,7 +278,7 @@ $(document).ready(function () {
 
     <div class="modal fade" id="betmodal" role="dialog" aria-labelledby="bet model label" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content">
+            <div id="betmodalcontent" class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                     <h4 class="modal-title" id="myModalLabel">What's your pick?</h4>
@@ -285,10 +287,11 @@ $(document).ready(function () {
                     <form role="form" class="form-inline" id="betForm" method="post">
                         <input type="hidden" name="machid" value="">
                         <div class="row">
-                            <div class="col-md-8 col-xs-8 ">
+                            <div class="col-md-12 col-xs-8 ">
                             <select type="hidden" name="tickid" value="">
                             {% csrf_token %}
-                            <span id="against">Against &nbsp;</span>
+                            <p>
+                            <span id="against">Against&nbsp;</span>
                             <b><span id="machname"></span></b>
                              at <b><span id="odds"></span>
                             <span id="rodds"></span></b> odds
@@ -322,9 +325,11 @@ $(document).ready(function () {
                         <span id=beterr class="alert"></span>
                     </div>
                     </div>
+                    <span id="imgoverlay"></span>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button id="betcancel" type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button id="betboom" type="button" class="btn btn-default">Boom</button>
                     <button id="betbutton" type="button" class="btn btn-primary">Save changes</button>
                 </div>
             </div>

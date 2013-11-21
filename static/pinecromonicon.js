@@ -25,9 +25,9 @@ function populate(counter,machid,against) {
 }
 function calcpayout() {
     if ($("#position").is(':checked')) {
-        $('#payoutval').text($('#odds').text() * $("#pinbucks").val());
+        $('#payoutval').text(Math.round($('#odds').text() * $("#pinbucks").val()));
     } else {
-        $('#payoutval').text($('#rodds').text() * $("#pinbucks").val());
+        $('#payoutval').text(Math.round($('#rodds').text() * $("#pinbucks").val()));
     }
 }
 

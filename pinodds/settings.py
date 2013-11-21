@@ -1,6 +1,6 @@
 # Django settings for pinodds project.
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -50,7 +50,7 @@ USE_TZ = True
 
 ACCOUNT_ACTIVATION_DAYS=2
 EMAIL_HOST='localhost'
-DEFAULT_FROM_EMAIL="webmaster@bcpcdsd.f88888888.net"
+DEFAULT_FROM_EMAIL="webmaster@pinecronomicon.com"
 AUTH_PROFILE_MODULE='odds.PinUser'
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
