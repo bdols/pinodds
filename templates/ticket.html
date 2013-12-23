@@ -1,3 +1,4 @@
+<p>
 {% for bet in ticket.bet_set.all %}
 {{bet.value}} pinbucks 
 {% if not bet.position %}
@@ -7,4 +8,5 @@ on
 {% endif %}
 {{ bet.machine.name }} at {{ bet.at_odds.value|floatformat:2 }}:1
 <br>
+{{ bet.comment }}</p>
 {% endfor %}

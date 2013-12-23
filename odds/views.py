@@ -23,6 +23,11 @@ def table(request):
     data['last5bets']=form_bets_data()
     return render_to_response("table.html",data,context_instance = RequestContext(request))
 
+def ticket_view(request,ticket_id):
+    data={}
+    data['ticket']=Ticket.objects.get(id=ticket_id)
+    return render_to_response("ticket_view.html",data,context_instance = RequestContext(request))
+
 def bet(request):
     data={}
     try:
@@ -108,7 +113,8 @@ def tickets (request,userid):
         for b in t.bet_set.all():
             tick['bets'].append(form_bets_dict(b))
         data.append(tick)
-    json = simplejson.dumps(data, ensure_ascii=False)
+    d=sorted(data, key=lambda x: -x['value'])
+    json = simplejson.dumps(d, ensure_ascii=False)
     return HttpResponse(json,mimetype='application/javascript')
     
 def last5 (request):
